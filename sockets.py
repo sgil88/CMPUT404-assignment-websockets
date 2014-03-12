@@ -79,15 +79,17 @@ def hello():
 def read_ws(ws):
     '''A greenlet function that reads from the websocket and updates the world'''
     # XXX: TODO IMPLEMENT ME
+    print "HELP"
     try:
         while True:
+	    print "websocket: %s" % ws
             entity = ws.receive()
             print "WS RECV:%s" % entity
             if entity is not None:
                 packet = json.loads(entity)
-                for key in packet["data"].keys():
-                    myWorld.update(packet["entity"], key, packet["data"][key])
+                myWorld.set(packet["entity"], packet["data"])
             else:
+		print "breaking"
                 break;
     except:
         '''Done'''
@@ -98,16 +100,14 @@ def subscribe_socket(ws):
        websocket and read updates from the websocket '''
     # XXX: TODO IMPLEMENT ME
 
-    # g = gevent.spawn(read_ws, ws)
-    # myWorld.add_set_listener(g)    
-    # try:
-    #     while True:
-    #         msg = json.dumps(myWorld.world())
-    #         ws.send(msg)
-    # except Exception as e:
-    #     print "WS Error %s" % e
-    # finally:
-    #     gevent.kill(g)
+    g = gevent.spawn(read_ws, ws)
+    # myWorld.add_set_listener(ws)    
+    try:
+        ws.send(json.dumps(myWorld.world()))
+    except Exception as e:
+        print "WS Error %s" % e
+    finally:
+        gevent.kill(g)
 
 def flask_post_json():
     '''Ah the joys of frameworks! They do so much work for you
