@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 import flask
-from flask import Flask, request
+from flask import Flask, request, redirect, url_for
 from flask_sockets import Sockets
 import gevent
 from gevent import queue
@@ -25,6 +25,8 @@ import os
 app = Flask(__name__)
 sockets = Sockets(app)
 app.debug = True
+
+gevents = list()
 
 class World:
     def __init__(self):
@@ -60,29 +62,52 @@ class World:
         return self.space
 
 myWorld = World()        
+myWorld.space["bronte"]={'x':10,'y':10,'colour':'blue'};
 
 def set_listener( entity, data ):
     ''' do something with the update ! '''
+        
+
 
 myWorld.add_set_listener( set_listener )
         
 @app.route('/')
 def hello():
     '''Return something coherent here.. perhaps redirect to /static/index.html '''
-    return None
+    return redirect(url_for('static', filename='index.html'))
 
-def read_ws(ws,client):
+def read_ws(ws):
     '''A greenlet function that reads from the websocket and updates the world'''
     # XXX: TODO IMPLEMENT ME
-    return None
+    try:
+        while True:
+            entity = ws.receive()
+            print "WS RECV:%s" % entity
+            if entity is not None:
+                packet = json.loads(entity)
+                for key in packet["data"].keys():
+                    myWorld.update(packet["entity"], key, packet["data"][key])
+            else:
+                break;
+    except:
+        '''Done'''
 
 @sockets.route('/subscribe')
 def subscribe_socket(ws):
     '''Fufill the websocket URL of /subscribe, every update notify the
        websocket and read updates from the websocket '''
     # XXX: TODO IMPLEMENT ME
-    return None
 
+    # g = gevent.spawn(read_ws, ws)
+    # myWorld.add_set_listener(g)    
+    # try:
+    #     while True:
+    #         msg = json.dumps(myWorld.world())
+    #         ws.send(msg)
+    # except Exception as e:
+    #     print "WS Error %s" % e
+    # finally:
+    #     gevent.kill(g)
 
 def flask_post_json():
     '''Ah the joys of frameworks! They do so much work for you
@@ -102,19 +127,19 @@ def update(entity):
 @app.route("/world", methods=['POST','GET'])    
 def world():
     '''you should probably return the world here'''
-    return None
+    return json.dumps( myWorld.world())
 
 @app.route("/entity/<entity>")    
 def get_entity(entity):
     '''This is the GET version of the entity interface, return a representation of the entity'''
-    return None
+    return json.dumps( myWorld.get(entity) )
 
 
 @app.route("/clear", methods=['POST','GET'])
 def clear():
     '''Clear the world out!'''
-    return None
-
+    myWorld.clear()
+    return json.dumps( myWorld.world() )
 
 
 if __name__ == "__main__":
