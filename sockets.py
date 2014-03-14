@@ -26,8 +26,6 @@ app = Flask(__name__)
 sockets = Sockets(app)
 app.debug = True
 
-gevents = list()
-
 class World:
     def __init__(self):
         self.clear()
@@ -36,6 +34,9 @@ class World:
         
     def add_set_listener(self, listener):
         self.listeners.append( listener )
+
+    def rm_set_listener(self, listener):
+        self.listeners.remove( listener )
 
     def update(self, entity, key, value):
         entry = self.space.get(entity,dict())
@@ -62,15 +63,14 @@ class World:
         return self.space
 
 myWorld = World()        
-myWorld.space["bronte"]={'x':10,'y':10,'colour':'blue'};
+myWorld.space["bronte"]={'x':10,'y':10,'colour':'blue'}
+currEntities = queue.Queue()
 
 def set_listener( entity, data ):
     ''' do something with the update ! '''
-        
+    currEntities.put_nowait({entity: data})
 
-
-myWorld.add_set_listener( set_listener )
-        
+       
 @app.route('/')
 def hello():
     '''Return something coherent here.. perhaps redirect to /static/index.html '''
@@ -78,19 +78,18 @@ def hello():
 
 def read_ws(ws):
     '''A greenlet function that reads from the websocket and updates the world'''
+    global myWorld
     # XXX: TODO IMPLEMENT ME
-    print "HELP"
     try:
         while True:
-	    print "websocket: %s" % ws
             entity = ws.receive()
             print "WS RECV:%s" % entity
             if entity is not None:
                 packet = json.loads(entity)
-                myWorld.set(packet["entity"], packet["data"])
+                new_entity = packet.keys()[0]
+                myWorld.set(new_entity, packet[new_entity])
             else:
-		print "breaking"
-                break;
+                break
     except:
         '''Done'''
 
@@ -99,14 +98,18 @@ def subscribe_socket(ws):
     '''Fufill the websocket URL of /subscribe, every update notify the
        websocket and read updates from the websocket '''
     # XXX: TODO IMPLEMENT ME
+    global myWorld
 
+    myWorld.add_set_listener( set_listener )
     g = gevent.spawn(read_ws, ws)
-    # myWorld.add_set_listener(ws)    
     try:
-        ws.send(json.dumps(myWorld.world()))
+        while True:
+            entity = currEntities.get()
+            ws.send(json.dumps(entity))
     except Exception as e:
         print "WS Error %s" % e
     finally:
+        myWorld.rm_set_listener( set_listener )
         gevent.kill(g)
 
 def flask_post_json():
@@ -122,21 +125,25 @@ def flask_post_json():
 @app.route("/entity/<entity>", methods=['POST','PUT'])
 def update(entity):
     '''update the entities via this interface'''
-    return None
+#    myWorld.update(entity)
+    return redirect(url_for('static', filename='index.html'))
 
 @app.route("/world", methods=['POST','GET'])    
 def world():
+    global myWorld
     '''you should probably return the world here'''
     return json.dumps( myWorld.world())
 
 @app.route("/entity/<entity>")    
 def get_entity(entity):
+    global myWorld
     '''This is the GET version of the entity interface, return a representation of the entity'''
     return json.dumps( myWorld.get(entity) )
 
 
 @app.route("/clear", methods=['POST','GET'])
 def clear():
+    global myWorld
     '''Clear the world out!'''
     myWorld.clear()
     return json.dumps( myWorld.world() )

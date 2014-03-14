@@ -128,7 +128,9 @@ function addEntity(entity, data) {
     world[entity] = data;
     drawNextFrame(); // (but should we?)
     //XXX: Send a XHTML Request that updates the entity you just modified!
-    socket.send(JSON.stringify({"entity":entity, "data":data}));
+    var msg = {}
+    msg[entity] = data;
+    socket.send(JSON.stringify(msg));
 }
 var counter = 0;
 function addEntityWithoutName(data) {
@@ -260,7 +262,7 @@ function wsSetup() {
     socket = new WebSocket(url);
     socket.onopen = function() {
         //XXX: TODO What are you going to do here?
-        
+	// request to get world?
     };
     socket.onerror = function(msg) {
         debug("WebSocket Error:" + msg.data);
@@ -269,7 +271,10 @@ function wsSetup() {
         try {
             debug("WebSocket Recv:" + msg.data);
             //XXX: TODO What are you going to do here?
-            world = JSON.parse(msg.data);
+            entityData = JSON.parse(msg.data);
+	    for (entity in entityData) {
+		world[entity] = entityData[entity];
+	    }    
 	    drawNextFrame();
 	    update();
         } catch (e) {
@@ -279,9 +284,6 @@ function wsSetup() {
 }
 
 wsSetup();
-
-
-
 
 // 30 frames per second
 setInterval( update, 1000/30.0);
