@@ -14,10 +14,15 @@ pip install flask-sockets
 
 pip install ws4py
 
+Collaboration  
+=============  
+
+Pair Programmed Assignment: Bronte Lee, Stephanie Gil
+
 Contributors / Licensing
 ========================
 
-Generally everything is LICENSE'D under the Apache 2 license by Abram Hindle.
+Generally everything is LICENSE'D under the Apache 2 license by Abram Hindle, Bronte Lee, Stephanie Gill.
 
 freetests.py is LICENSE'D under a BSD-like license:
 
