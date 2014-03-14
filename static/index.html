@@ -256,13 +256,41 @@ function update() {
     drawFrame();
 }
 
+// From Asn 4
+function sendJSONXMLHTTPRequest(url, objects, callback) {
+    var xhr = new XMLHttpRequest();
+
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState==4) {
+            try {
+                if (xhr.status==200) {
+                    //XXX: parse some JSON from the request!
+                    var newObj = JSON.parse(xhr.responseText);
+
+                    //XXX: Pass the data to the callback!
+                    callback(newObj);
+                }
+            }
+            catch(e) {
+                alert('Error: ' + e.name);
+            }
+        }
+    };
+    //XXX: POST to a URL
+    xhr.open('POST', url);
+    xhr.setRequestHeader("Content-type","application/json");
+ 
+    // finally send it
+    xhr.send(objects);
+}
 
 function wsSetup() {
     var url = "ws://"+host+"/subscribe";   
     socket = new WebSocket(url);
     socket.onopen = function() {
         //XXX: TODO What are you going to do here?
-	// request to get world?
+        sendJSONXMLHTTPRequest('/world', null, function(newWorld) {
+            world = newWorld; });
     };
     socket.onerror = function(msg) {
         debug("WebSocket Error:" + msg.data);

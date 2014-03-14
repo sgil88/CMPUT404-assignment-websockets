@@ -63,7 +63,6 @@ class World:
         return self.space
 
 myWorld = World()        
-myWorld.space["bronte"]={'x':10,'y':10,'colour':'blue'}
 currEntities = queue.Queue()
 
 def set_listener( entity, data ):
@@ -125,8 +124,14 @@ def flask_post_json():
 @app.route("/entity/<entity>", methods=['POST','PUT'])
 def update(entity):
     '''update the entities via this interface'''
-#    myWorld.update(entity)
-    return redirect(url_for('static', filename='index.html'))
+    new_entity = flask_post_json()
+
+    # Update The World: Add the new entity's keys (such as x & y coords)
+    for key in new_entity.keys():
+        myWorld.update(entity, key, new_entity[key]);
+
+    # Convert to new entity to JSON and return it
+    return json.dumps( myWorld.get(entity) )
 
 @app.route("/world", methods=['POST','GET'])    
 def world():
