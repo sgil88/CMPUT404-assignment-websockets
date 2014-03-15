@@ -63,13 +63,15 @@ class World:
         return self.space
 
 myWorld = World()        
-currEntities = queue.Queue()
 
 def set_listener( entity, data ):
     ''' do something with the update ! '''
-    currEntities.put_nowait({entity: data})
+    set_listener.entities.put({entity:data})
 
-       
+listener = set_listener
+listener.entities = queue.Queue()
+myWorld.add_set_listener( listener)
+
 @app.route('/')
 def hello():
     '''Return something coherent here.. perhaps redirect to /static/index.html '''
@@ -77,38 +79,43 @@ def hello():
 
 def read_ws(ws):
     '''A greenlet function that reads from the websocket and updates the world'''
-    global myWorld
     # XXX: TODO IMPLEMENT ME
     try:
         while True:
             entity = ws.receive()
             print "WS RECV:%s" % entity
-            if entity is not None:
+            if entity is not None :
                 packet = json.loads(entity)
                 new_entity = packet.keys()[0]
-                myWorld.set(new_entity, packet[new_entity])
+                if new_entity == "world":
+                    for entity in myWorld.world():
+                        myWorld.update_listeners(entity)
+                else:
+                    myWorld.set(new_entity, packet[new_entity])
             else:
+                socket_list.remove(ws)
                 break
     except:
         '''Done'''
+
+socket_list = list()
 
 @sockets.route('/subscribe')
 def subscribe_socket(ws):
     '''Fufill the websocket URL of /subscribe, every update notify the
        websocket and read updates from the websocket '''
     # XXX: TODO IMPLEMENT ME
-    global myWorld
-
-    myWorld.add_set_listener( set_listener )
+    socket_list.append(ws)
     g = gevent.spawn(read_ws, ws)
     try:
         while True:
-            entity = currEntities.get()
-            ws.send(json.dumps(entity))
+            entity = listener.entities.get()
+            for sock in socket_list:
+                sock.send(json.dumps(entity))
     except Exception as e:
         print "WS Error %s" % e
     finally:
-        myWorld.rm_set_listener( set_listener )
+        socket_list.remove(ws)
         gevent.kill(g)
 
 def flask_post_json():
