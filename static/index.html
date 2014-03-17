@@ -126,7 +126,6 @@ function getPosition(e) {
 
 function addEntity(entity, data) {
     world[entity] = data;
-
     //XXX: Send a XHTML Request that updates the entity you just modified!
     var msg = {}
     msg[entity] = data;
@@ -279,7 +278,6 @@ function wsSetup() {
 		}
 	    }    
 	    drawNextFrame();
-	    update();
         } catch (e) {
             alert("socket on message: " + e);
         }
