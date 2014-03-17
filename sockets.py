@@ -68,6 +68,8 @@ def set_listener( entity, data ):
     ''' do something with the update ! '''
     set_listener.entities.put({entity:data})
 
+# how to create static variables in python found at:
+# http://stackoverflow.com/questions/279561/what-is-the-python-equivalent-of-static-variables-inside-a-function
 listener = set_listener
 listener.entities = queue.Queue()
 myWorld.add_set_listener( listener)
@@ -77,6 +79,7 @@ def hello():
     '''Return something coherent here.. perhaps redirect to /static/index.html '''
     return redirect(url_for('static', filename='index.html'))
 
+# modified the code from: https://github.com/abramhindle/WebSocketsExamples
 def read_ws(ws):
     '''A greenlet function that reads from the websocket and updates the world'''
     # XXX: TODO IMPLEMENT ME
@@ -100,6 +103,7 @@ def read_ws(ws):
 
 socket_list = list()
 
+# modified the code from: https://github.com/abramhindle/WebSocketsExamples
 @sockets.route('/subscribe')
 def subscribe_socket(ws):
     '''Fufill the websocket URL of /subscribe, every update notify the
