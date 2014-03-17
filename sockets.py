@@ -88,8 +88,7 @@ def read_ws(ws):
                 packet = json.loads(entity)
                 new_entity = packet.keys()[0]
                 if new_entity == "world":
-                    for entity in myWorld.world():
-                        myWorld.update_listeners(entity)
+                    ws.send(json.dumps({"world":myWorld.world()}))
                 else:
                     myWorld.set(new_entity, packet[new_entity])
             else:
@@ -110,6 +109,7 @@ def subscribe_socket(ws):
     try:
         while True:
             entity = listener.entities.get()
+            print "Sending..." + str(entity)
             for sock in socket_list:
                 sock.send(json.dumps(entity))
     except Exception as e:

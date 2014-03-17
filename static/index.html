@@ -271,8 +271,12 @@ function wsSetup() {
             debug("WebSocket Recv:" + msg.data);
             //XXX: TODO What are you going to do here?
             entityData = JSON.parse(msg.data);
-	    for (entity in entityData) {
-		world[entity] = entityData[entity];
+	    if ("world" in entityData) {
+		world = entityData["world"];
+	    } else {
+		for (entity in entityData) {
+		    world[entity] = entityData[entity];
+		}
 	    }    
 	    drawNextFrame();
 	    update();
